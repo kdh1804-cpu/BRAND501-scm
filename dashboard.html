@@ -838,12 +838,20 @@
             if (isNaN(n)) return 99;
             return (n >= 6) ? n : n + 12;
         };
-        const items = [...entry.items].sort((a,b) => {
-            const ma = monthOrder(a.month), mb = monthOrder(b.month);
-            if (ma !== mb) return ma - mb;
-            return a.week.localeCompare(b.week);
-        });
+// 주차 텍스트에서 시작 일자(첫 숫자)를 추출. "1주차 1~5..." 같은 경우엔 "1~5"의 1을 잡도록.
+const weekStartDay = (w) => {
+    // "1주차 1~5\n영업일 3일" → 마지막 "숫자~숫자" 패턴의 앞 숫자 사용
+    const matches = [...(w||'').matchAll(/(\d+)\s*~\s*\d+/g)];
+    if (matches.length === 0) return 99;
+    // 여러 매치 중 마지막 것(예: "1주차 1~5"에서 "1~5")의 시작일
+    return parseInt(matches[matches.length - 1][1]);
+};
 
+const items = [...entry.items].sort((a,b) => {
+    const ma = monthOrder(a.month), mb = monthOrder(b.month);
+    if (ma !== mb) return ma - mb;
+    return weekStartDay(a.week) - weekStartDay(b.week);  // 숫자 기준 정렬
+});
         let rows = '';
         items.forEach(it => {
             const weekClean = it.week.replace(/\s+/g, ' ').replace(/(\d+~\d+)\s*(영업일\s*\d+일)/, '$1 ($2)');
